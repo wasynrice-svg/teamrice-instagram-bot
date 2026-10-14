@@ -1,0 +1,70 @@
+name: Instagram bot
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"   # every 15 minutes: publish due posts + answer comments
+    - cron: "17 9 * * 1"     # Mondays: renew the access token
+  workflow_dispatch:          # lets you run it by hand from the Actions tab
+    inputs:
+      task:
+        description: "What should it do?"
+        type: choice
+        default: check
+        options: [check, all, post, reply, refresh-token]
+      dry_run:
+        description: "Dry run (show what would happen, don't post)"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write   # so the bot can save its memory in the state/ folder
+
+concurrency:
+  group: instagram-bot
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Pick task
+        id: task
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "name=${{ inputs.task }}" >> "$GITHUB_OUTPUT"
+            echo "dry=${{ inputs.dry_run }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event.schedule }}" = "17 9 * * 1" ]; then
+            echo "name=refresh-token" >> "$GITHUB_OUTPUT"
+            echo "dry=${{ vars.DRY_RUN || 'false' }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "name=all" >> "$GITHUB_OUTPUT"
+            echo "dry=${{ vars.DRY_RUN || 'false' }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run bot
+        env:
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          GH_PAT: ${{ secrets.GH_PAT }}
+          DRY_RUN: ${{ steps.task.outputs.dry }}
+        run: python bot/instagram_bot.py ${{ steps.task.outputs.name }}
+
+      - name: Save bot memory
+        if: always()
+        run: |
+          git config user.name "instagram-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add state/
+          if git diff --cached --quiet; then
+            echo "Nothing new to save."
+          else
+            git commit -m "Update bot state [skip ci]"
+            git pull --rebase
+            git push
+          fi
