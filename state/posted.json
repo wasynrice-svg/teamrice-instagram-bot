@@ -6,7 +6,7 @@
   },
   "nov02-first-snow": {
     "status": "error",
-    "attempts": 2,
-    "last_error": "Instagram could not process media 18114265865595174 (ERROR)."
+    "attempts": 3,
+    "last_error": "Instagram could not process media 18114270650595174 (ERROR)."
   }
 }
