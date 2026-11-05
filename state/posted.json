@@ -8,5 +8,10 @@
     "status": "error",
     "attempts": 3,
     "last_error": "Instagram could not process media 18114270650595174 (ERROR)."
+  },
+  "nov04-brewer-rise": {
+    "status": "error",
+    "attempts": 1,
+    "last_error": "Instagram could not process media 18114518786595174 (ERROR)."
   }
 }
