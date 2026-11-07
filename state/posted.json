@@ -16,7 +16,7 @@
   },
   "nov06-pineridge": {
     "status": "error",
-    "attempts": 1,
+    "attempts": 2,
     "last_error": "POST 17841447855196312/media failed (400): Only photo or video can be accepted as media type."
   }
 }
