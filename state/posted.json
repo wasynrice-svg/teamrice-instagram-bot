@@ -13,5 +13,10 @@
     "status": "error",
     "attempts": 3,
     "last_error": "Instagram could not process media 18114530156595174 (ERROR)."
+  },
+  "nov06-pineridge": {
+    "status": "error",
+    "attempts": 1,
+    "last_error": "POST 17841447855196312/media failed (400): Only photo or video can be accepted as media type."
   }
 }
