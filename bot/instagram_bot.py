@@ -159,9 +159,15 @@ class Instagram:
             time.sleep(10)
             waited += 10
 
-    def create_container(self, url, caption=None, carousel_item=False):
+    def create_container(self, url, caption=None, carousel_item=False, story=False):
         params = {}
-        if url.lower().split("?")[0].endswith(VIDEO_EXTENSIONS):
+        is_video = url.lower().split("?")[0].endswith(VIDEO_EXTENSIONS)
+        if story:
+            # Stories don't take captions; put any text on the image/video itself.
+            params["media_type"] = "STORIES"
+            params["video_url" if is_video else "image_url"] = url
+            return self.post(f"{self.user_id}/media", **params)["id"]
+        if is_video:
             params["media_type"] = "VIDEO" if carousel_item else "REELS"
             params["video_url"] = url
         else:
@@ -172,8 +178,10 @@ class Instagram:
             params["caption"] = caption
         return self.post(f"{self.user_id}/media", **params)["id"]
 
-    def publish(self, media_urls, caption):
-        if len(media_urls) == 1:
+    def publish(self, media_urls, caption, story=False):
+        if story:
+            container = self.create_container(media_urls[0], story=True)
+        elif len(media_urls) == 1:
             container = self.create_container(media_urls[0], caption)
         else:
             children = [self.create_container(u, carousel_item=True) for u in media_urls]
@@ -282,17 +290,22 @@ def run_post(ig):
         if not urls:
             log(f"! {pid}: no media listed - skipping.")
             continue
+        is_story = post.get("type", "").lower() == "story"
+        if is_story and len(urls) > 1:
+            log(f"! {pid}: a story takes exactly one photo or video - skipping.")
+            continue
         if len(urls) > 10:
             log(f"! {pid}: carousels can have at most 10 items - skipping.")
             continue
         caption = post.get("caption", "").replace("\\n", "\n")
 
         if is_dry_run():
-            log(f"[dry run] Would publish {pid} ({len(urls)} item(s)): {caption[:60]!r}")
+            kind = "story" if is_story else f"{len(urls)} item(s)"
+            log(f"[dry run] Would publish {pid} ({kind}): {caption[:60]!r}")
             continue
 
         try:
-            media_id = ig.publish(urls, caption)
+            media_id = ig.publish(urls, caption, story=is_story)
             log(f"+ Published {pid} -> Instagram media {media_id}")
             state[pid] = {"status": "published", "media_id": media_id, "published_at": now.isoformat()}
         except InstagramError as e:
