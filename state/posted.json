@@ -18,5 +18,10 @@
     "status": "error",
     "attempts": 3,
     "last_error": "POST 17841447855196312/media failed (400): Only photo or video can be accepted as media type."
+  },
+  "nov09-first-snow": {
+    "status": "published",
+    "media_id": "18103245044555045",
+    "published_at": "2026-11-10T00:15:13.960784+00:00"
   }
 }
